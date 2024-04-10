@@ -13,9 +13,11 @@ from helper_functions import *
 
 from pymycobot.mycobot import MyCobot
 from pymycobot import PI_PORT, PI_BAUD
+from ikpy.chain import Chain
 
 dual_quaternions=[]
 path_coords=[]
+robot=Chain.from_urdf_file("mycobot_280_pi.urdf",base_elements=["g_base"])
 
 def open_file():
     global selected_coords
@@ -41,9 +43,13 @@ def update_motion():
     createPath()
 
 def createPath():
-    global path_coords, dual_quaternions
+    global path_coords, dual_quaternions, joint_array
+    path_coords=[]
+    joint_array=[]
     for i in range(101):
         temp_dq=(i/100)*dual_quaternions[1]+(1-i/100)*dual_quaternions[0]
+        temp_matrix=temp_dq.homogeneous_matrix()
+        joint_array.append(robot.inverse_kinematics_frame(temp_matrix))
         temp_quat_pose=temp_dq.quat_pose_array()
         print(quaternionic.array(temp_quat_pose[0:4]))
 
@@ -54,10 +60,11 @@ def createPath():
         temp_pose.extend(temp_angles)
         path_coords.append(temp_pose)
     print(path_coords)
+    print(joint_array)
 
 def run_motion():
-    for c in path_coords:
-        mc.send_coords(coords=c, speed=20, mode=1)
+    for c in joint_array:
+        mc.send_radians(radians=c[1:7], speed=20, mode=1)
         while mc.is_moving() == 1:
             pass
         if mc.is_moving() == -1:
