@@ -5,9 +5,9 @@ def parse_pose(file_name = None):
     poses = []
     with open(file_name, 'r') as file:
         for line in file:
-            int_pose = [int(val) for val in line.split(',')]
+            int_pose = [float(val) for val in line.split(',')]
             poses.append(int_pose)
-            print(poses)
+            # print(poses)
             # continue
     return poses
 

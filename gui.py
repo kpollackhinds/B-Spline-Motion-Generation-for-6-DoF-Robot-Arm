@@ -4,14 +4,17 @@ import numpy as np
 from numpy import deg2rad as rad
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
-import quaternion 
+# import quaternion 
+import quaternionic 
+
+from quaternionic import converters
 from dual_quaternions import DualQuaternion
 # Assume `parse_pose` and `run_motion` are defined in helper_functions
 from helper_functions import parse_pose, run_motion
 
 def open_file():
     global selected_coords
-    file = filedialog.askopenfilename(initialdir="/", title="Select File", filetypes=(("Text files", "*.txt*"), ("all files", "*.*")))
+    file = filedialog.askopenfilename(title="Select File", filetypes=(("Text files", "*.txt*"), ("all files", "*.*")))
     if file:
         selected_coords = parse_pose(file)
         update_motion()
@@ -23,9 +26,11 @@ def update_motion():
     dual_quaternion = []
     if selected_coords:
         for coord in selected_coords:
-            temp_quaternion = quaternion.from_euler_angles([rad(c) for c in coord[3:6]])
-            print(temp_quaternion.type(), temp_quaternion)
-            temp_dq = DualQuaternion.from_quat_pose_array(temp_quaternion.tolist().extend(coord[0:3]))
+            temp_quaternion = quaternionic.array.from_euler_angles([rad(c) for c in coord[3:6]])
+            print(temp_quaternion.tolist())
+            temp_quaternion = temp_quaternion.tolist()
+            temp_quaternion.extend(coord[0:3])
+            temp_dq = DualQuaternion.from_quat_pose_array(temp_quaternion)
             dual_quaternion.append(temp_dq)
     print(dual_quaternion)
 
