@@ -5,13 +5,14 @@ from numpy import deg2rad as rad
 from numpy import rad2deg as deg
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
-# import quaternion 
 import quaternionic 
 
 from quaternionic import converters
 from dual_quaternions import DualQuaternion
-# Assume `parse_pose` and `run_motion` are defined in helper_functions
-from helper_functions import parse_pose, run_motion
+from helper_functions import *
+
+from pymycobot.mycobot import MyCobot
+from pymycobot import PI_PORT, PI_BAUD
 
 dual_quaternions=[]
 path_coords=[]
@@ -30,7 +31,7 @@ def update_motion():
     dual_quaternions = []
     if selected_coords:
         for coord in selected_coords:
-            temp_quaternion = quaternionic.array.from_euler_angles([rad(c) for c in coord[3:6]])
+            temp_quaternion = quaternionic.array(to_quaternion(rad(coord[3]), rad(coord[4]), rad(coord[5])))
             print(temp_quaternion.tolist())
             temp_quaternion = temp_quaternion.tolist()
             temp_quaternion.extend(coord[0:3])
@@ -45,13 +46,24 @@ def createPath():
         temp_dq=(i/100)*dual_quaternions[1]+(1-i/100)*dual_quaternions[0]
         temp_quat_pose=temp_dq.quat_pose_array()
         print(quaternionic.array(temp_quat_pose[0:4]))
-        temp_angles=quaternionic.array(temp_quat_pose[0:4]).to_euler_angles
+
+        temp_angles=to_euler_angles(temp_quat_pose[0:4])
         temp_pose=temp_quat_pose[4:7]
-        temp_angles=[deg(temp_angles[0]-180),-1*(deg(temp_angles[1])),deg(temp_angles[2]+180)]
+        temp_angles = [deg(c) for c in temp_angles]
+        # temp_angles=[deg(temp_angles[0]-180),-1*(deg(temp_angles[1])),deg(temp_angles[2]+180)]
         temp_pose.extend(temp_angles)
         path_coords.append(temp_pose)
     print(path_coords)
 
+def run_motion():
+    for c in path_coords:
+        mc.send_coords(coords=c, speed=20, mode=1)
+        while mc.is_moving() == 1:
+            pass
+        if mc.is_moving() == -1:
+            print(mc.get_error_information())
+            return
+    return
 
 def update_listbox():
     listbox.delete(0, tk.END)
@@ -61,7 +73,7 @@ def update_listbox():
 
 root = tk.Tk()
 root.wm_title("Embedding in Tk")
-
+mc = MyCobot(PI_PORT, PI_BAUD)
 selected_coords = None
 
 # Frames for layout
@@ -91,7 +103,8 @@ right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 # Control buttons
 button_frame = tk.Frame(root)
 tk.Button(button_frame, text="Browse", command=open_file).pack(side=tk.LEFT, padx=10)
-tk.Button(button_frame, text="Run Motion", command=update_motion).pack(side=tk.LEFT, padx=10)
+tk.Button(button_frame, text="Run Motion", command=run_motion).pack(side=tk.LEFT, padx=10)
+
 button_frame.pack(fill=tk.X)
 
 root.mainloop()
