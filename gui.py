@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import filedialog
 import numpy as np
 from numpy import deg2rad as rad
+from numpy import rad2deg as deg
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 # import quaternion 
@@ -11,6 +12,9 @@ from quaternionic import converters
 from dual_quaternions import DualQuaternion
 # Assume `parse_pose` and `run_motion` are defined in helper_functions
 from helper_functions import parse_pose, run_motion
+
+dual_quaternions=[]
+path_coords=[]
 
 def open_file():
     global selected_coords
@@ -23,7 +27,7 @@ def update_motion():
     update_listbox()
 
     global dual_quaternions
-    dual_quaternion = []
+    dual_quaternions = []
     if selected_coords:
         for coord in selected_coords:
             temp_quaternion = quaternionic.array.from_euler_angles([rad(c) for c in coord[3:6]])
@@ -31,9 +35,22 @@ def update_motion():
             temp_quaternion = temp_quaternion.tolist()
             temp_quaternion.extend(coord[0:3])
             temp_dq = DualQuaternion.from_quat_pose_array(temp_quaternion)
-            dual_quaternion.append(temp_dq)
-    print(dual_quaternion)
+            dual_quaternions.append(temp_dq)
+    print(dual_quaternions)
+    createPath()
 
+def createPath():
+    global path_coords, dual_quaternions
+    for i in range(101):
+        temp_dq=(i/100)*dual_quaternions[1]+(1-i/100)*dual_quaternions[0]
+        temp_quat_pose=temp_dq.quat_pose_array()
+        print(quaternionic.array(temp_quat_pose[0:4]))
+        temp_angles=quaternionic.array(temp_quat_pose[0:4]).to_euler_angles
+        temp_pose=temp_quat_pose[4:7]
+        temp_angles=[deg(temp_angles[0]-180),-1*(deg(temp_angles[1])),deg(temp_angles[2]+180)]
+        temp_pose.extend(temp_angles)
+        path_coords.append(temp_pose)
+    print(path_coords)
 
 
 def update_listbox():
