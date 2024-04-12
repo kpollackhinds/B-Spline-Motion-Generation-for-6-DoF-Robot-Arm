@@ -46,8 +46,9 @@ def createPath():
     global path_coords, dual_quaternions, joint_array
     path_coords=[]
     joint_array=[]
-    for i in range(101):
-        temp_dq=(i/100)*dual_quaternions[1]+(1-i/100)*dual_quaternions[0]
+    points=30
+    for i in range(points+1):
+        temp_dq=(i/points)*dual_quaternions[1]+(1-i/points)*dual_quaternions[0]
         temp_matrix=temp_dq.homogeneous_matrix()
         joint_array.append(robot.inverse_kinematics_frame(temp_matrix))
         temp_quat_pose=temp_dq.quat_pose_array()
@@ -77,6 +78,9 @@ def update_listbox():
     if selected_coords:
         for i, coord in enumerate(selected_coords):
             listbox.insert(i, str(coord))
+
+def release_servo():
+    mc.release_servo()
 
 root = tk.Tk()
 root.wm_title("Embedding in Tk")
@@ -111,6 +115,7 @@ right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 button_frame = tk.Frame(root)
 tk.Button(button_frame, text="Browse", command=open_file).pack(side=tk.LEFT, padx=10)
 tk.Button(button_frame, text="Run Motion", command=run_motion).pack(side=tk.LEFT, padx=10)
+tk.Button(button_frame, text="Release Servos",command=release_servo).pack(side=tk.LEFT,padx=10)
 
 button_frame.pack(fill=tk.X)
 
