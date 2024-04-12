@@ -44,7 +44,7 @@ def update_motion():
 
 def createPath():
     global path_coords, dual_quaternions, joint_array
-    path_coords=[]
+    path_coords=[] 
     joint_array=[]
     points=30
     for i in range(points+1):
@@ -60,12 +60,17 @@ def createPath():
         # temp_angles=[deg(temp_angles[0]-180),-1*(deg(temp_angles[1])),deg(temp_angles[2]+180)]
         temp_pose.extend(temp_angles)
         path_coords.append(temp_pose)
+        #robot.plot(joint_array[-1],ax)
+        draw_axis(temp_pose,ax,np)
     print(path_coords)
     print(joint_array)
+    #robot.plot(joint_array[0],ax)
 
 def run_motion():
-    for c in joint_array:
-        mc.send_radians(radians=c[1:7], speed=20, mode=1)
+    for c in path_coords:
+    #for c in joint_array:
+        #mc.send_radians(radians=c[1:7], speed=20)
+        mc.send_coords(path_coords,speed=20,mode=1)
         while mc.is_moving() == 1:
             pass
         if mc.is_moving() == -1:
@@ -80,11 +85,11 @@ def update_listbox():
             listbox.insert(i, str(coord))
 
 def release_servo():
-    mc.release_servo()
+    mc.release_all_servos()
 
 root = tk.Tk()
 root.wm_title("Embedding in Tk")
-mc = MyCobot(PI_PORT, PI_BAUD)
+#mc = MyCobot(PI_PORT, PI_BAUD)
 selected_coords = None
 
 # Frames for layout
@@ -100,7 +105,10 @@ left_frame.pack(side=tk.LEFT, fill=tk.Y)
 fig = Figure(figsize=(5, 4), dpi=100)
 ax = fig.add_subplot(111, projection="3d")
 t = np.arange(0, 3, .01)
-ax.plot(t, 2 * np.sin(2 * np.pi * t))
+#ax.plot(t, 2 * np.sin(2 * np.pi * t))
+ax.set_xbound(-.4,.4)
+ax.set_ybound(-.4,.4)
+ax.set_zlim(0, .6)
 
 canvas = FigureCanvasTkAgg(fig, master=right_frame)
 canvas.draw()
@@ -114,8 +122,9 @@ right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 # Control buttons
 button_frame = tk.Frame(root)
 tk.Button(button_frame, text="Browse", command=open_file).pack(side=tk.LEFT, padx=10)
+tk.Button(button_frame, text="Release Servos",command=release_servo).pack(side=tk.BOTTOM, pady=10)
 tk.Button(button_frame, text="Run Motion", command=run_motion).pack(side=tk.LEFT, padx=10)
-tk.Button(button_frame, text="Release Servos",command=release_servo).pack(side=tk.LEFT,padx=10)
+
 
 button_frame.pack(fill=tk.X)
 

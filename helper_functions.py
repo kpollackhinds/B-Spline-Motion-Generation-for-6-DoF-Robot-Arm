@@ -42,6 +42,20 @@ def to_euler_angles(q):
 
     return [roll, pitch, yaw]
 
+def draw_axis(position,axis,np):
+    origin=np.matrix([[position[0]/1000],[position[1]/1000],[position[2]/1000]])
+    x, y, z = math.radians(position[3]), math.radians(position[4]),math.radians(position[5])
+    rotation_matrix=np.matrix([[math.cos(z)*math.cos(y),math.sin(x)*math.sin(y)*math.cos(z)-math.cos(x)*math.sin(z),math.cos(x)*math.sin(y)*math.cos(z)+math.sin(x)*math.sin(z)],[math.sin(z)*math.cos(y),math.sin(x)*math.sin(y)*math.sin(z)+math.cos(x)*math.cos(z),math.cos(x)*math.sin(y)*math.sin(z)-math.sin(x)*math.cos(z)],[-math.sin(y),math.sin(x)*math.cos(y),math.cos(x)*math.cos(y)]])
+    x=np.add(np.matmul(rotation_matrix,np.matrix([[.1],[0],[0]])),origin)
+    y=np.add(np.matmul(rotation_matrix,np.matrix([[0],[.1],[0]])),origin)
+    z=np.add(np.matmul(rotation_matrix,np.matrix([[0],[0],[.1]])),origin)
+    axis.plot([origin[0,0],x[0,0]],[origin[1,0],x[1,0]],zs=[origin[2,0],x[2,0]],color="red")
+    axis.plot([origin[0,0],y[0,0]],[origin[1,0],y[1,0]],zs=[origin[2,0],y[2,0]],color="green")
+    axis.plot([origin[0,0],z[0,0]],[origin[1,0],z[1,0]],zs=[origin[2,0],z[2,0]],color="blue")
+    axis.set_xbound(-.4,.4)
+    axis.set_ybound(-.4,.4)
+    axis.set_zlim(0, .6)
+
 
 # def run_motion():
 
