@@ -70,7 +70,7 @@ def run_motion():
     for c in path_coords:
     #for c in joint_array:
         #mc.send_radians(radians=c[1:7], speed=20)
-        mc.send_coords(path_coords,speed=20,mode=1)
+        mc.send_coords(c,speed=20,mode=1)
         while mc.is_moving() == 1:
             pass
         if mc.is_moving() == -1:
@@ -88,26 +88,38 @@ def release_servo():
     mc.release_all_servos()
 
 root = tk.Tk()
-root.wm_title("Embedding in Tk")
-#mc = MyCobot(PI_PORT, PI_BAUD)
-selected_coords = None
+root.wm_title("Motion Selection/Visualization Interface")
+mc = MyCobot(PI_PORT, PI_BAUD)
 
-# Frames for layout
+#Frames for layout
 left_frame = tk.Frame(root)
 right_frame = tk.Frame(root)
 
-# Listbox in the left frame
-listbox = tk.Listbox(left_frame, height=10, width=15, bg="grey", activestyle='dotbox', font="Helvetica")
+#Label above the Listbox in the left frame
+label = tk.Label(left_frame, text="Control Positions")
+label.pack(padx=10, pady=5)
+
+#Listbox in the left frame
+listbox = tk.Listbox(left_frame, height=10, width=50, bg="light grey", activestyle='dotbox', font=("Helvetica", 8))
 listbox.pack(padx=10, pady=10)
+
+#Checkboxes for additional options
+bspline_motion_var = tk.BooleanVar()
+bspline_interpolation_var = tk.BooleanVar()
+bspline_motion_check = tk.Checkbutton(left_frame, text="B-spline Motion", variable=bspline_motion_var)
+bspline_interpolation_check = tk.Checkbutton(left_frame, text="B-spline Interpolation", variable=bspline_interpolation_var)
+bspline_motion_check.pack(padx=10, pady=5)
+bspline_interpolation_check.pack(padx=10, pady=5)
+
 left_frame.pack(side=tk.LEFT, fill=tk.Y)
 
-# Plot in the right frame
+#Plot in the right frame
 fig = Figure(figsize=(5, 4), dpi=100)
 ax = fig.add_subplot(111, projection="3d")
 t = np.arange(0, 3, .01)
 #ax.plot(t, 2 * np.sin(2 * np.pi * t))
-ax.set_xbound(-.4,.4)
-ax.set_ybound(-.4,.4)
+ax.set_xbound(-.4, .4)
+ax.set_ybound(-.4, .4)
 ax.set_zlim(0, .6)
 
 canvas = FigureCanvasTkAgg(fig, master=right_frame)
@@ -119,12 +131,11 @@ toolbar.update()
 
 right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
-# Control buttons
+#Control buttons
 button_frame = tk.Frame(root)
 tk.Button(button_frame, text="Browse", command=open_file).pack(side=tk.LEFT, padx=10)
-tk.Button(button_frame, text="Release Servos",command=release_servo).pack(side=tk.BOTTOM, pady=10)
+tk.Button(button_frame, text="Release Servos", command=release_servo).pack(side=tk.BOTTOM, pady=10)
 tk.Button(button_frame, text="Run Motion", command=run_motion).pack(side=tk.LEFT, padx=10)
-
 
 button_frame.pack(fill=tk.X)
 
