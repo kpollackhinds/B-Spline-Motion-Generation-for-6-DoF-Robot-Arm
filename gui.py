@@ -104,7 +104,7 @@ def createPath():
             temp_quat_pose=dq.quat_pose_array()
             print(quaternionic.array(temp_quat_pose[0:4]))
             temp_matrix=dq.homogeneous_matrix()
-            joint_array.append(arm.ets().ik_GN(temp_matrix,slimit=150))
+            joint_array.append(arm.ets().ik_GN(temp_matrix,slimit=300))
             if joint_array[-1][1]==0:
                 print("here",joint_array[-1])
                 passed=False
