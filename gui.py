@@ -61,6 +61,9 @@ def createPath():
     path_coords=[] 
     joint_array=[]
     points=30
+    adjusted_control_pos_dq=dual_quaternions
+    if selected_type.get()=="Closed":
+        adjusted_control_pos_dq.extend(dual_quaternions[0:Spline_degree])
     if not selected_curve:
         for i in range(points+1):
             temp_dq=(i/points)*dual_quaternions[1]+(1-i/points)*dual_quaternions[0]
@@ -80,8 +83,8 @@ def createPath():
         print(path_coords)
         print(joint_array)
         #robot.plot(joint_array[0],ax)
-    elif selected_curve == "bspline":
-        knot_vector = gen_knot_vector(degree=degree, n = len(dual_quaternions))
+    elif selected_curve.get() == "B-spline Motion":
+        knot_vector = gen_knot_vector(degree=Spline_degree, n = len(dual_quaternions)-1)
         b_spline_dqs = b_spline_curve(knot_vector=knot_vector, 
                                       degree=Spline_degree, 
                                       control_positions=adjusted_control_pos_dq
