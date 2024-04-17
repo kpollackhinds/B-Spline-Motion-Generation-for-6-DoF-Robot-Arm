@@ -51,30 +51,38 @@ def createPath():
     path_coords=[] 
     joint_array=[]
     points=30
-    for i in range(points+1):
-        temp_dq=(i/points)*dual_quaternions[1]+(1-i/points)*dual_quaternions[0]
-        temp_matrix=temp_dq.homogeneous_matrix()
-        joint_array.append(robot.inverse_kinematics_frame(temp_matrix))
-        temp_quat_pose=temp_dq.quat_pose_array()
-        #print(quaternionic.array(temp_quat_pose[0:4]))
-        temp_pose=get_translation(temp_dq)
-        temp_angles=to_euler_angles(temp_quat_pose[0:4])
-        #temp_pose=temp_quat_pose[4:7]
-        temp_angles = [deg(c) for c in temp_angles]
-        # temp_angles=[deg(temp_angles[0]-180),-1*(deg(temp_angles[1])),deg(temp_angles[2]+180)]
-        temp_pose.extend(temp_angles)
-        path_coords.append(temp_pose)
-        #robot.plot(joint_array[-1],ax)
-        draw_axis(temp_pose,ax,np)
-    print(path_coords)
-    print(joint_array)
-    #robot.plot(joint_array[0],ax)
+    
+    
+    adjusted_control_pos_dq = dual_quaternions
+    if selected_type == 'Closed':
+        adjusted_control_pos_dq.extend(dual_quaternions[:Spline_degree])
 
-    elif selected_motion == "bspline":
-        knot_vector = gen_knot_vector(degree=degree, n = len(dual_quaternions))
+    if not selected_curve:
+        for i in range(points+1):
+            temp_dq=(i/points)*dual_quaternions[1]+(1-i/points)*dual_quaternions[0]
+            temp_matrix=temp_dq.homogeneous_matrix()
+            joint_array.append(robot.inverse_kinematics_frame(temp_matrix))
+            temp_quat_pose=temp_dq.quat_pose_array()
+            #print(quaternionic.array(temp_quat_pose[0:4]))
+            temp_pose=get_translation(temp_dq)
+            temp_angles=to_euler_angles(temp_quat_pose[0:4])
+            #temp_pose=temp_quat_pose[4:7]
+            temp_angles = [deg(c) for c in temp_angles]
+            # temp_angles=[deg(temp_angles[0]-180),-1*(deg(temp_angles[1])),deg(temp_angles[2]+180)]
+            temp_pose.extend(temp_angles)
+            path_coords.append(temp_pose)
+            #robot.plot(joint_array[-1],ax)
+            draw_axis(temp_pose,ax,np)
+        print(path_coords)
+        print(joint_array)
+    #robot.plot(joint_array[0],ax)
+    
+
+    elif selected_curve.get() == "B-spline Motion":
+        knot_vector = gen_knot_vector(degree=Spline_degree, n = len(adjusted_control_pos_dq))
         b_spline_dqs = b_spline_curve(knot_vector=knot_vector, 
-                                      degree=degree, 
-                                      control_positions=dual_quaternions
+                                      degree=Spline_degree, 
+                                      control_positions=adjusted_control_pos_dq
                                     )
         for dq in b_spline_dqs:
             temp_quat_pose=dq.quat_pose_array()
@@ -86,7 +94,7 @@ def createPath():
             path_coords.append(temp_pose)
         print(path_coords)
     
-    elif selected_motion == 'bspline_interpolation':
+    elif selected_curve.get() == 'B-spline Interpolation':
         pass
 
 def run_motion():
