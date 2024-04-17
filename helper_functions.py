@@ -42,6 +42,10 @@ def to_euler_angles(q):
 
     return [roll, pitch, yaw]
 
+def get_translation(dq):
+    quat= (dq.q_d*dq.q_r.conjugate-dq.q_r*dq.q_d.conjugate)/(dq.q_r*dq.q_r.conjugate)
+    return[quat.x,quat.y,quat.z]
+
 def draw_axis(position,axis,np):
     origin=np.matrix([[position[0]/1000],[position[1]/1000],[position[2]/1000]])
     x, y, z = math.radians(position[3]), math.radians(position[4]),math.radians(position[5])
