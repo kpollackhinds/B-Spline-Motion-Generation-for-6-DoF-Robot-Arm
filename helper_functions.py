@@ -1,4 +1,10 @@
 import math
+import quaternionic 
+import numpy as np
+from numpy import deg2rad as rad
+from numpy import rad2deg as deg
+from quaternionic import converters
+from dual_quaternions import DualQuaternion
 
 def parse_pose(file_name = None):
     if not file_name:

@@ -6,10 +6,11 @@ from numpy import rad2deg as deg
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 import quaternionic 
-
 from quaternionic import converters
 from dual_quaternions import DualQuaternion
+
 from helper_functions import *
+from bspline import *
 
 from pymycobot.mycobot import MyCobot
 from pymycobot import PI_PORT, PI_BAUD
@@ -29,6 +30,7 @@ def update_motion():
 
     global dual_quaternions
     dual_quaternions = []
+    path_coords=[]
     if selected_coords:
         for coord in selected_coords:
             temp_quaternion = quaternionic.array(to_quaternion(rad(coord[3]), rad(coord[4]), rad(coord[5])))
@@ -41,19 +43,39 @@ def update_motion():
     createPath()
 
 def createPath():
-    global path_coords, dual_quaternions
-    for i in range(101):
-        temp_dq=(i/100)*dual_quaternions[1]+(1-i/100)*dual_quaternions[0]
-        temp_quat_pose=temp_dq.quat_pose_array()
-        print(quaternionic.array(temp_quat_pose[0:4]))
+    global path_coords, dual_quaternions, selected_motion, knot_vector, degree
+    if not selected_motion:
+        for i in range(101):
+            temp_dq=(i/100)*dual_quaternions[1]+(1-i/100)*dual_quaternions[0]
+            temp_quat_pose=temp_dq.quat_pose_array()
+            print(quaternionic.array(temp_quat_pose[0:4]))
 
-        temp_angles=to_euler_angles(temp_quat_pose[0:4])
-        temp_pose=temp_quat_pose[4:7]
-        temp_angles = [deg(c) for c in temp_angles]
-        # temp_angles=[deg(temp_angles[0]-180),-1*(deg(temp_angles[1])),deg(temp_angles[2]+180)]
-        temp_pose.extend(temp_angles)
-        path_coords.append(temp_pose)
-    print(path_coords)
+            temp_angles=to_euler_angles(temp_quat_pose[0:4])
+            temp_pose=temp_quat_pose[4:7]
+            temp_angles = [deg(c) for c in temp_angles]
+            # temp_angles=[deg(temp_angles[0]-180),-1*(deg(temp_angles[1])),deg(temp_angles[2]+180)]
+            temp_pose.extend(temp_angles)
+            path_coords.append(temp_pose)
+        print(path_coords)
+
+    elif selected_motion == "bspline":
+        knot_vector = gen_knot_vector(degree=degree, n = len(dual_quaternions))
+        b_spline_dqs = b_spline_curve(knot_vector=knot_vector, 
+                                      degree=degree, 
+                                      control_positions=dual_quaternions
+                                    )
+        for dq in b_spline_dqs:
+            temp_quat_pose=dq.quat_pose_array()
+            print(quaternionic.array(temp_quat_pose[0:4]))
+            temp_angles=to_euler_angles(temp_quat_pose[0:4])
+            temp_pose=temp_quat_pose[4:7]
+            temp_angles = [deg(c) for c in temp_angles]
+            temp_pose.extend(temp_angles)
+            path_coords.append(temp_pose)
+        print(path_coords)
+    
+    elif selected_motion == 'bspline_interpolation':
+        pass
 
 def run_motion():
     for c in path_coords:
