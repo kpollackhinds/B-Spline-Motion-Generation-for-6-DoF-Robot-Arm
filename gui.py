@@ -8,6 +8,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 import quaternionic 
 from quaternionic import converters
 from dual_quaternions import DualQuaternion
+import time
 
 from helper_functions import *
 from bspline import *
@@ -22,7 +23,8 @@ path_coords=[]
 selected_coords=[]
 Spline_degree=1
 control_points=None
-arm=rtb.Robot.URDF(os.getcwd()+"\mycobot_280_pi.urdf")
+move_speed=30
+arm=rtb.Robot.URDF(os.getcwd()+"/mycobot_280_pi.urdf")
 
 def reset():
     global dual_quaternions, path_coords, selected_coords, Spline_degree, control_points
@@ -100,7 +102,7 @@ def createPath():
                                       degree=Spline_degree, 
                                       control_positions=adjusted_control_pos_dq
                                     )
-        for dq in b_spline_dqs:
+        for i,dq in enumerate(b_spline_dqs):
             temp_quat_pose=dq.quat_pose_array()
             print(quaternionic.array(temp_quat_pose[0:4]))
             temp_matrix=dq.homogeneous_matrix()
@@ -112,7 +114,12 @@ def createPath():
             temp_pose=[c*1000 for c in get_translation(dq)]
             temp_angles = [deg(c) for c in temp_angles]
             temp_pose.extend(temp_angles)
-            path_coords.append(temp_pose)
+            if i==0:
+                path_coords.append((temp_pose,0))
+            else:
+                distance =find_distance(temp_pose,path_coords[-1][0])
+                time_to_run=distance/move_speed
+                path_coords.append((temp_pose,time_to_run))
             draw_axis(temp_pose,ax,np)
         print(path_coords)
         print(passed)
@@ -120,13 +127,18 @@ def createPath():
     elif selected_curve.get() == 'B-spline Interpolation':
         pass
 
+def find_distance(point1,point2):
+    return((point1[0]-point2[0])**2+(point1[1]-point2[1])**2+(point1[2]-point2[2])**2)**.5
+
+
 def run_motion():
     for c in path_coords:
     #for c in joint_array:
         #mc.send_radians(radians=c[1:7], speed=20)
-        mc.send_coords(c,speed=20,mode=1)
-        while mc.is_moving() == 1:
-            pass
+        time.sleep(c[1])
+        mc.send_coords(c[0],speed=move_speed,mode=1)
+        #while mc.is_moving() == 1:
+        #    pass
         if mc.is_moving() == -1:
             print(mc.get_error_information())
             return
