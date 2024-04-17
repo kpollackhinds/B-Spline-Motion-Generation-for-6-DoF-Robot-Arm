@@ -20,9 +20,20 @@ dual_quaternions=[]
 path_coords=[]
 selected_coords=[]
 Spline_degree=1
+control_points=None
 robot=Chain.from_urdf_file("mycobot_280_pi.urdf",base_elements=["g_base"])
 
+def reset():
+    global dual_quaternions, path_coords, selected_coords, Spline_degree, control_points
+    dual_quaternions=[]
+    path_coords=[]
+    selected_coords=[]
+    Spline_degree=1
+    control_points=None
+    update_motion()
+
 def open_file():
+    reset()
     global selected_coords
     file = filedialog.askopenfilename(title="Select File", filetypes=(("Text files", "*.txt*"), ("all files", "*.*")))
     if file:
@@ -34,7 +45,6 @@ def update_motion():
 
     global dual_quaternions
     dual_quaternions = []
-    path_coords=[]
     if selected_coords:
         for coord in selected_coords:
             temp_quaternion = quaternionic.array(to_quaternion(rad(coord[3]), rad(coord[4]), rad(coord[5])))
@@ -51,12 +61,6 @@ def createPath():
     path_coords=[] 
     joint_array=[]
     points=30
-    
-    
-    adjusted_control_pos_dq = dual_quaternions
-    if selected_type == 'Closed':
-        adjusted_control_pos_dq.extend(dual_quaternions[:Spline_degree])
-
     if not selected_curve:
         for i in range(points+1):
             temp_dq=(i/points)*dual_quaternions[1]+(1-i/points)*dual_quaternions[0]
@@ -75,11 +79,9 @@ def createPath():
             draw_axis(temp_pose,ax,np)
         print(path_coords)
         print(joint_array)
-    #robot.plot(joint_array[0],ax)
-    
-
-    elif selected_curve.get() == "B-spline Motion":
-        knot_vector = gen_knot_vector(degree=Spline_degree, n = len(adjusted_control_pos_dq))
+        #robot.plot(joint_array[0],ax)
+    elif selected_curve == "bspline":
+        knot_vector = gen_knot_vector(degree=degree, n = len(dual_quaternions))
         b_spline_dqs = b_spline_curve(knot_vector=knot_vector, 
                                       degree=Spline_degree, 
                                       control_positions=adjusted_control_pos_dq
@@ -128,10 +130,21 @@ def checkDegree(value):
         return True
     else:
         return False
+    
+def check_control_pts(value):
+    global control_points
+    if value.isnumeric() and int(value)>0 and int(value)<=len(selected_coords):
+        control_points=int(value)
+        update_motion()
+        return True
+    elif value=="":
+        return True
+    else:
+        return False
 
 def change_curve(var, index, mode):
     print(var, index, mode)
-    print(selected_curve.get())
+    #print(var.get())
     update_motion()
 
 root = tk.Tk()
@@ -150,13 +163,7 @@ label.pack(padx=10, pady=5)
 listbox = tk.Listbox(left_frame, height=10, width=50, bg="light grey", activestyle='dotbox', font=("Helvetica", 8))
 listbox.pack(padx=10, pady=10)
 
-#Checkboxes for additional options
-#bspline_motion_var = tk.BooleanVar()
-#bspline_interpolation_var = tk.BooleanVar()
-#bspline_motion_check = tk.Checkbutton(left_frame, text="B-spline Motion", variable=bspline_motion_var)
-#bspline_interpolation_check = tk.Checkbutton(left_frame, text="B-spline Interpolation", variable=bspline_interpolation_var)
-#bspline_motion_check.pack(padx=10, pady=5)
-#bspline_interpolation_check.pack(padx=10, pady=5)
+
 input_frame = tk.Frame(left_frame)
 curve = [ 
     "B-spline Motion", "B-spline Interpolation"
@@ -170,11 +177,36 @@ curve_label.grid(row=0,column=0)
 curve_dropdown = tk.OptionMenu(input_frame, selected_curve , *curve ) 
 curve_dropdown.grid(row=0,column=1) 
 
-deg_label=tk.Label(input_frame,text="Enter Degree of curve. Only numbers less than number of points is allowed")
+deg_label=tk.Label(input_frame,text="Enter Degree of curve.\n Only numbers less than the number of points is allowed")
 deg_label.grid(row=1,column=0)
 deg_valid = input_frame.register(checkDegree)
 degree_textbox=tk.Entry(input_frame,validate='key', validatecommand=(deg_valid,'%P'))
 degree_textbox.grid(row=1,column=1)
+
+types=["Closed","Clamped"]
+type_label=tk.Label(input_frame,text="Select Curve Ending Condition")
+type_label.grid(row=2,column=0)
+selected_type=tk.StringVar()
+selected_type.set('Closed')
+selected_type.trace_add("write",change_curve)
+type_dropdown=tk.OptionMenu(input_frame,selected_type,*types)
+type_dropdown.grid(row=2,column=1)
+
+parameters=["Uniform","Chord","Centripetal"]
+parameter_label=tk.Label(input_frame,text="Select Parameterization Type (Interpolation Only)")
+parameter_label.grid(row=3,column=0)
+selected_parameter=tk.StringVar()
+selected_parameter.set("Uniform")
+selected_parameter.trace_add("write",change_curve)
+parameter_dropdown=tk.OptionMenu(input_frame,selected_parameter,*parameters)
+parameter_dropdown.grid(row=3,column=1)
+
+control_pts_label=tk.Label(input_frame,text="Enter Number of Control Points (Interpolation Only).\n Only numbers less than or equal to the number of points is allowed")
+control_pts_label.grid(row=4,column=0)
+control_pts_valid = input_frame.register(check_control_pts)
+control_pts_textbox=tk.Entry(input_frame,validate='key', validatecommand=(control_pts_valid,'%P'))
+control_pts_textbox.grid(row=4,column=1)
+
 
 
 
@@ -203,7 +235,8 @@ right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 button_frame = tk.Frame(left_frame)
 tk.Button(button_frame, text="Browse", command=open_file).pack(side=tk.LEFT, padx=10)
 tk.Button(button_frame, text="Run Motion", command=run_motion).pack(side=tk.LEFT, padx=10)
-tk.Button(button_frame, text="Release Servos", command=release_servo).pack(side=tk.BOTTOM, pady=10)
+tk.Button(button_frame, text="Release Servos", command=release_servo).pack(side=tk.LEFT, padx=10)
+tk.Button(button_frame, text="Reset",command=reset).pack(side=tk.LEFT, padx=10)
 
 button_frame.pack()
 
