@@ -14,14 +14,15 @@ from bspline import *
 
 from pymycobot.mycobot import MyCobot
 from pymycobot import PI_PORT, PI_BAUD
-from ikpy.chain import Chain
+import roboticstoolbox as rtb
+import os
 
 dual_quaternions=[]
 path_coords=[]
 selected_coords=[]
 Spline_degree=1
 control_points=None
-# robot=Chain.from_urdf_file("mycobot_280_pi.urdf",base_elements=["g_base"])
+arm=rtb.Robot.URDF(os.getcwd()+"\mycobot_280_pi.urdf")
 
 def reset():
     global dual_quaternions, path_coords, selected_coords, Spline_degree, control_points
@@ -30,6 +31,12 @@ def reset():
     selected_coords=[]
     Spline_degree=1
     control_points=None
+    degree_textbox.delete(0,tk.END)
+    control_pts_textbox.delete(0,tk.END)
+    ax.clear()
+    ax.set_xbound(-.4, .4)
+    ax.set_ybound(-.4, .4)
+    ax.set_zlim(0, .6)
     update_motion()
 
 def open_file():
@@ -50,14 +57,15 @@ def update_motion():
             temp_quaternion = quaternionic.array(to_quaternion(rad(coord[3]), rad(coord[4]), rad(coord[5])))
             print(temp_quaternion.tolist())
             temp_quaternion = temp_quaternion.tolist()
-            temp_quaternion.extend(coord[0:3])
+            temp_quaternion.extend([c/1000 for c in coord[0:3]])
             temp_dq = DualQuaternion.from_quat_pose_array(temp_quaternion)
             dual_quaternions.append(temp_dq)
     print(dual_quaternions)
     createPath()
 
 def createPath():
-    global path_coords, dual_quaternions, joint_array
+    global path_coords, dual_quaternions, joint_array, passed
+    passed=True
     path_coords=[] 
     joint_array=[]
     points=30
@@ -71,10 +79,10 @@ def createPath():
         for i in range(points+1):
             temp_dq=(i/points)*dual_quaternions[1]+(1-i/points)*dual_quaternions[0]
             temp_matrix=temp_dq.homogeneous_matrix()
-            joint_array.append(robot.inverse_kinematics_frame(temp_matrix))
+            joint_array.append(arm.ets().ik_NR(temp_matrix))
             temp_quat_pose=temp_dq.quat_pose_array()
             #print(quaternionic.array(temp_quat_pose[0:4]))
-            temp_pose=get_translation(temp_dq)
+            temp_pose=[c*1000 for c in get_translation(temp_dq)]
             temp_angles=to_euler_angles(temp_quat_pose[0:4])
             #temp_pose=temp_quat_pose[4:7]
             temp_angles = [deg(c) for c in temp_angles]
@@ -95,12 +103,19 @@ def createPath():
         for dq in b_spline_dqs:
             temp_quat_pose=dq.quat_pose_array()
             print(quaternionic.array(temp_quat_pose[0:4]))
+            temp_matrix=dq.homogeneous_matrix()
+            joint_array.append(arm.ets().ik_GN(temp_matrix,slimit=150))
+            if joint_array[-1][1]==0:
+                print("here",joint_array[-1])
+                passed=False
             temp_angles=to_euler_angles(temp_quat_pose[0:4])
-            temp_pose=temp_quat_pose[4:7]
+            temp_pose=[c*1000 for c in get_translation(dq)]
             temp_angles = [deg(c) for c in temp_angles]
             temp_pose.extend(temp_angles)
             path_coords.append(temp_pose)
+            draw_axis(temp_pose,ax,np)
         print(path_coords)
+        print(passed)
     
     elif selected_curve.get() == 'B-spline Interpolation':
         pass
