@@ -21,7 +21,7 @@ path_coords=[]
 selected_coords=[]
 Spline_degree=1
 control_points=None
-robot=Chain.from_urdf_file("mycobot_280_pi.urdf",base_elements=["g_base"])
+# robot=Chain.from_urdf_file("mycobot_280_pi.urdf",base_elements=["g_base"])
 
 def reset():
     global dual_quaternions, path_coords, selected_coords, Spline_degree, control_points
@@ -62,6 +62,9 @@ def createPath():
     joint_array=[]
     points=30
     adjusted_control_pos_dq=dual_quaternions
+    
+    if (len(adjusted_control_pos_dq) <2):
+        return
     if selected_type.get()=="Closed":
         adjusted_control_pos_dq.extend(dual_quaternions[0:Spline_degree])
     if not selected_curve:
