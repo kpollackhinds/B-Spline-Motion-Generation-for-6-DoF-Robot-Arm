@@ -132,11 +132,15 @@ def find_distance(point1,point2):
 
 
 def run_motion():
-    for c in path_coords:
+    mc.send_coords(path_coords[0][0],speed=move_speed,mode=1)
+    while mc.is_moving()==1:
+        pass
+    for c in path_coords[1:]:
+        starttime=time.time()
     #for c in joint_array:
         #mc.send_radians(radians=c[1:7], speed=20)
-        time.sleep(c[1])
-        mc.send_coords(c[0],speed=move_speed,mode=1)
+        while(time.time()-starttime<c[1]):
+            mc.send_coords(c[0],speed=move_speed,mode=1)
         #while mc.is_moving() == 1:
         #    pass
         if mc.is_moving() == -1:
