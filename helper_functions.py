@@ -52,16 +52,19 @@ def get_translation(dq):
     quat= (dq.q_d*dq.q_r.conjugate-dq.q_r*dq.q_d.conjugate)/(dq.q_r*dq.q_r.conjugate)
     return[quat.x,quat.y,quat.z]
 
-def draw_axis(position,axis,np):
+def draw_axis(position,axis,np,full=True):
     origin=np.matrix([[position[0]/1000],[position[1]/1000],[position[2]/1000]])
     x, y, z = math.radians(position[3]), math.radians(position[4]),math.radians(position[5])
     rotation_matrix=np.matrix([[math.cos(z)*math.cos(y),math.sin(x)*math.sin(y)*math.cos(z)-math.cos(x)*math.sin(z),math.cos(x)*math.sin(y)*math.cos(z)+math.sin(x)*math.sin(z)],[math.sin(z)*math.cos(y),math.sin(x)*math.sin(y)*math.sin(z)+math.cos(x)*math.cos(z),math.cos(x)*math.sin(y)*math.sin(z)-math.sin(x)*math.cos(z)],[-math.sin(y),math.sin(x)*math.cos(y),math.cos(x)*math.cos(y)]])
-    x=np.add(np.matmul(rotation_matrix,np.matrix([[.1],[0],[0]])),origin)
-    y=np.add(np.matmul(rotation_matrix,np.matrix([[0],[.1],[0]])),origin)
-    z=np.add(np.matmul(rotation_matrix,np.matrix([[0],[0],[.1]])),origin)
-    axis.plot([origin[0,0],x[0,0]],[origin[1,0],x[1,0]],zs=[origin[2,0],x[2,0]],color="red")
-    axis.plot([origin[0,0],y[0,0]],[origin[1,0],y[1,0]],zs=[origin[2,0],y[2,0]],color="green")
-    axis.plot([origin[0,0],z[0,0]],[origin[1,0],z[1,0]],zs=[origin[2,0],z[2,0]],color="blue")
+    x_arr=np.add(np.matmul(rotation_matrix,np.matrix([[.1],[0],[0]])),origin)
+    y_arr=np.add(np.matmul(rotation_matrix,np.matrix([[0],[.1],[0]])),origin)
+    z_arr=np.add(np.matmul(rotation_matrix,np.matrix([[0],[0],[.1]])),origin)
+    if full:
+        axis.plot([origin[0,0],x_arr[0,0]],[origin[1,0],x_arr[1,0]],zs=[origin[2,0],x_arr[2,0]],color="red")
+        axis.plot([origin[0,0],y_arr[0,0]],[origin[1,0],y_arr[1,0]],zs=[origin[2,0],y_arr[2,0]],color="green")
+        axis.plot([origin[0,0],z_arr[0,0]],[origin[1,0],z_arr[1,0]],zs=[origin[2,0],z_arr[2,0]],color="blue")
+    else:
+        axis.scatter(origin[0],origin[1],origin[2])
     axis.set_xbound(-.4,.4)
     axis.set_ybound(-.4,.4)
     axis.set_zlim(0, .6)

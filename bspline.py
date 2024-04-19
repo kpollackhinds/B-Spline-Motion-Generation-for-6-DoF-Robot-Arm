@@ -1,24 +1,26 @@
-def gen_knot_vector(degree, n):
+def gen_knot_vector(degree, n,style="Clamped"):
     """Returns a uniform clamped knot vector"""
     knot_vector_length = degree + n + 1 + 1  # m+1
     knot_vector = [0] * knot_vector_length
-
-    x = 1 / (knot_vector_length + 1 - 2 * (degree + 1))
-    for i in range(knot_vector_length):
-        if i < degree + 1:
-            continue
-        elif i > knot_vector_length - 1 - degree - 1:
-            knot_vector[i] = 1
-        else:
-            knot_vector[i] = knot_vector[i - 1] + x
-
+    if style=="Clamped":
+        x = 1 / (knot_vector_length + 1 - 2 * (degree + 1))
+        for i in range(knot_vector_length):
+            if i < degree + 1:
+                continue
+            elif i > knot_vector_length - 1 - degree - 1:
+                knot_vector[i] = 1
+            else:
+                knot_vector[i] = knot_vector[i - 1] + x
+    elif style=="Closed":
+        for i in range(knot_vector_length):
+            knot_vector[i]=i/knot_vector_length
     return knot_vector
 
 def find_span(degree, n, u, knot_vector):
     p = degree
     m = len(knot_vector) - 1
 
-    if u == knot_vector[n + 1]:
+    if abs(u-knot_vector[n + 1])<.001:
         return n
 
     low = p
@@ -96,7 +98,6 @@ def b_spline_curve(knot_vector, degree, control_positions, resolution=100):
                 C_u = Nip * P_i
             else:
                 C_u += Nip * P_i
-
 
         bspline_points.append(C_u)
 

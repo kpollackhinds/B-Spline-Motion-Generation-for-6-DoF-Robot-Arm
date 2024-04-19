@@ -35,10 +35,6 @@ def reset():
     control_points=None
     degree_textbox.delete(0,tk.END)
     control_pts_textbox.delete(0,tk.END)
-    ax.clear()
-    ax.set_xbound(-.4, .4)
-    ax.set_ybound(-.4, .4)
-    ax.set_zlim(0, .6)
     update_motion()
 
 def open_file():
@@ -50,6 +46,10 @@ def open_file():
         update_motion()
 
 def update_motion():
+    ax.clear()
+    ax.set_xbound(-.4, .4)
+    ax.set_ybound(-.4, .4)
+    ax.set_zlim(0, .6)
     update_listbox()
 
     global dual_quaternions
@@ -62,6 +62,7 @@ def update_motion():
             temp_quaternion.extend([c/1000 for c in coord[0:3]])
             temp_dq = DualQuaternion.from_quat_pose_array(temp_quaternion)
             dual_quaternions.append(temp_dq)
+            draw_axis(coord,ax,np)
     print(dual_quaternions)
     createPath()
 
@@ -92,16 +93,16 @@ def createPath():
             temp_pose.extend(temp_angles)
             path_coords.append(temp_pose)
             #robot.plot(joint_array[-1],ax)
-            draw_axis(temp_pose,ax,np)
+            draw_axis(temp_pose,ax,np,full=False)
         print(path_coords)
         print(joint_array)
         #robot.plot(joint_array[0],ax)
     elif selected_curve.get() == "B-spline Motion":
-        knot_vector = gen_knot_vector(degree=Spline_degree, n = len(dual_quaternions)-1)
+        knot_vector = gen_knot_vector(degree=Spline_degree, n = len(adjusted_control_pos_dq)-1,style=selected_type.get())
         b_spline_dqs = b_spline_curve(knot_vector=knot_vector, 
                                       degree=Spline_degree, 
-                                      control_positions=adjusted_control_pos_dq
-                                    )
+                                      control_positions=adjusted_control_pos_dq,
+                                    resolution=40)
         for i,dq in enumerate(b_spline_dqs):
             temp_quat_pose=dq.quat_pose_array()
             print(quaternionic.array(temp_quat_pose[0:4]))
@@ -120,7 +121,7 @@ def createPath():
                 distance =find_distance(temp_pose,path_coords[-1][0])
                 time_to_run=distance/move_speed
                 path_coords.append((temp_pose,time_to_run))
-            draw_axis(temp_pose,ax,np)
+            draw_axis(temp_pose,ax,np,full=False)
         print(path_coords)
         print(passed)
     
@@ -224,7 +225,7 @@ types=["Closed","Clamped"]
 type_label=tk.Label(input_frame,text="Select Curve Ending Condition")
 type_label.grid(row=2,column=0)
 selected_type=tk.StringVar()
-selected_type.set('Closed')
+selected_type.set('Clamped')
 selected_type.trace_add("write",change_curve)
 type_dropdown=tk.OptionMenu(input_frame,selected_type,*types)
 type_dropdown.grid(row=2,column=1)
