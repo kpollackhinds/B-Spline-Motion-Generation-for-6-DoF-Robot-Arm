@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog
+from tkinter import messagebox
 import numpy as np
 from numpy import deg2rad as rad
 from numpy import rad2deg as deg
@@ -111,6 +112,9 @@ def createPath():
             if joint_array[-1][1]==0:
                 print("here",joint_array[-1])
                 passed=False
+                messagebox.showerror(title="Robot Workspace Check", message="Manipulator unable to reach configuration")
+                break
+
             temp_angles=to_euler_angles(temp_quat_pose[0:4])
             temp_pose=[c*1000 for c in get_translation(dq)]
             temp_angles = [deg(c) for c in temp_angles]
