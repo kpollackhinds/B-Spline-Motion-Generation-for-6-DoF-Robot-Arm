@@ -113,7 +113,6 @@ def createPath():
                 print("here",joint_array[-1])
                 passed=False
                 messagebox.showerror(title="Robot Workspace Check", message="Manipulator unable to reach configuration")
-                break
 
             temp_angles=to_euler_angles(temp_quat_pose[0:4])
             temp_pose=[c*1000 for c in get_translation(dq)]
@@ -130,7 +129,41 @@ def createPath():
         print(passed)
     
     elif selected_curve.get() == 'B-spline Interpolation':
-        pass
+        parameter=parameterize(dual_quaternions,selected_parameter.get())
+        control_points_arr=get_control_points(dual_quaternions,parameter,Spline_degree,control_points)
+        for i in control_points_arr:
+            temp_quat_pose=i.quat_pose_array()
+            temp_angles=to_euler_angles(temp_quat_pose[0:4])
+            temp_pose=[c*1000 for c in get_translation(i)]
+            temp_pose.extend(temp_angles)
+            draw_axis(temp_pose,ax,np,False,full=False,)
+        knot_vector = interpolation_knot_vector(len(dual_quaternions)-1,control_points,Spline_degree,parameter)
+        print(knot_vector)
+        b_spline_dqs = b_spline_curve(knot_vector=knot_vector, 
+                                      degree=Spline_degree, 
+                                      control_positions=control_points_arr,
+                                    resolution=40)
+        for i,dq in enumerate(b_spline_dqs):
+            temp_quat_pose=dq.quat_pose_array()
+            print(quaternionic.array(temp_quat_pose[0:4]))
+            temp_matrix=dq.homogeneous_matrix()
+            joint_array.append(arm.ets().ik_GN(temp_matrix,slimit=300))
+            if joint_array[-1][1]==0:
+                print("here",joint_array[-1])
+                if passed:
+                    messagebox.showerror(title="Robot Workspace Check", message="Manipulator unable to reach configuration")
+                passed=False
+            temp_angles=to_euler_angles(temp_quat_pose[0:4])
+            temp_pose=[c*1000 for c in get_translation(dq)]
+            temp_angles = [deg(c) for c in temp_angles]
+            temp_pose.extend(temp_angles)
+            if i==0:
+                path_coords.append((temp_pose,0))
+            else:
+                distance =find_distance(temp_pose,path_coords[-1][0])
+                time_to_run=distance/move_speed
+                path_coords.append((temp_pose,time_to_run))
+            draw_axis(temp_pose,ax,np,joint_array[-1][1],full=False)
 
 def find_distance(point1,point2):
     return((point1[0]-point2[0])**2+(point1[1]-point2[1])**2+(point1[2]-point2[2])**2)**.5
@@ -175,8 +208,8 @@ def checkDegree(value):
     
 def check_control_pts(value):
     global control_points
-    if value.isnumeric() and int(value)>0 and int(value)<=len(selected_coords):
-        control_points=int(value)
+    if value.isnumeric() and int(value)>1 and int(value)<=len(selected_coords):
+        control_points=int(value)-1
         update_motion()
         return True
     elif value=="":
