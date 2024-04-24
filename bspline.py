@@ -1,3 +1,5 @@
+import numpy as np
+from dual_quaternions import DualQuaternion
 def gen_knot_vector(degree, n,style="Clamped"):
     """Returns a uniform clamped knot vector"""
     knot_vector_length = degree + n + 1 + 1  # m+1
@@ -102,3 +104,99 @@ def b_spline_curve(knot_vector, degree, control_positions, resolution=100):
         bspline_points.append(C_u)
 
     return bspline_points
+
+def parameterize(dq_list,style="Uniform"):
+    parameters=[]
+    if style=="Uniform":
+        for i in range(len(dq_list)):
+            parameters.append(i/(len(dq_list)-1))
+    elif style=="Chord":    
+        L=0
+        for i in range(len(dq_list)-1):
+            L+=(dq_list[i+1].q_r-dq_list[i].q_r).norm
+        for i in range(len(dq_list)):
+            k=0
+            for j in range(1,i+1):
+                k+=(dq_list[j].q_r-dq_list[j-1].q_r).norm
+            parameters.append(k/L)
+    elif style=="Centripetal":
+        L=0
+        for i in range(len(dq_list)-1):
+            L+=((dq_list[i+1].q_r-dq_list[i].q_r).norm)**.5
+        for i in range(len(dq_list)):
+            k=0
+            for j in range(1,i+1):
+                k+=((dq_list[j].q_r-dq_list[j-1].q_r).norm)**.5
+            parameters.append(k/L)
+    print("p",parameters)
+    return parameters
+
+def get_control_points(dq_list,parameter,degree,h=None):
+    if h==None:
+        h=len(dq_list)-1
+    points=[dq_list[0]]
+    knot_vector=interpolation_knot_vector(len(dq_list)-1,h,degree,parameter)
+    Q=[]
+    for i in range(len(dq_list)):
+        Q.append(dq_list[i]+(-1)*better_basis_function(0,degree,parameter[i],knot_vector)*dq_list[0]+(-1)*better_basis_function(h,degree,parameter[i],knot_vector)*dq_list[-1])
+    Q1=np.zeros([h-1,8])
+    for i in range(1,h):
+        Q1[i-1,:]=Q[i].dq_array()
+    #Q_arr=np.zeros([h-1,8])
+    #for i in range(1,h):
+    #   value =DualQuaternion.from_dq_array([0,0,0,0,0,0,0,0])
+    #    for j in range(1,len(dq_list)-1):
+    #        value+=better_basis_function(i,degree,parameter[j],knot_vector)*Q[j]
+    #    Q_arr[i-1,:]=value.dq_array()
+    N_arr=np.zeros([len(dq_list)-2,h-1])
+    for i in range(1,len(dq_list)-1):
+        for j in range(1,h):
+            N_arr[i-1,j-1]=better_basis_function(j,degree,parameter[i],knot_vector)
+    Q_arr=np.matmul(N_arr.transpose(),Q1)
+    P=np.matmul(np.linalg.inv(np.matmul(N_arr.transpose(),N_arr)),Q_arr)
+    #print("P",P)
+    #P=np.matmul(np.linalg.pinv(N_arr),Q1)
+    #print(P)
+    for i in range(h-1):
+        points.append(DualQuaternion.from_dq_array(P[i,:]))
+    points.append(dq_list[-1])
+    return points
+    
+def interpolation_knot_vector(n,h,degree,parameter):
+    if h==None:
+        h=n
+    d=(n+1)/(h-degree+1)
+    knot_vector_length=h+degree+1+1
+    vector = [0] * knot_vector_length
+    for i in range(knot_vector_length):
+            if i < degree + 1:
+                continue
+            elif i > knot_vector_length - 1 - degree - 1:
+                vector[i] = 1
+            else:
+                index=int((i-degree)*d)
+                alpha=(i-degree)*d-index
+                vector[i] = (1-alpha)*parameter[index]+alpha*parameter[index+1]
+    return vector
+
+
+def better_basis_function(index,degree,t,knot_vector):
+    prevArray=[]
+    for i in range(len(knot_vector)-1):
+        if t>=knot_vector[i] and t<knot_vector[i+1]:
+            prevArray.append(1)
+        else:
+            prevArray.append(0)
+    for j in range(1,degree):
+        current_array=[]
+        for i in range(len(prevArray)-1):
+            if knot_vector[i+j]==knot_vector[i]and knot_vector[i+j+1]==knot_vector[i+1]:
+                current_array.append(0)
+            elif knot_vector[i+j]==knot_vector[i]:
+                current_array.append(prevArray[i+1]*(knot_vector[i+j+1]-t)/(knot_vector[i+j+1]-knot_vector[i+1]))
+            elif knot_vector[i+j+1]==knot_vector[i+1]:
+                current_array.append(prevArray[i]*(t-knot_vector[i])/ (knot_vector[i+j]-knot_vector[i]))
+            else:
+                current_array.append(prevArray[i]*(t-knot_vector[i])/ (knot_vector[i+j]-knot_vector[i]) + prevArray[i+1]* (knot_vector[i+j+1]-t)/(knot_vector[i+j+1]-knot_vector[i+1]))
+        prevArray=current_array
+    return prevArray[index]
