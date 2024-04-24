@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import ttk
 from tkinter import filedialog
 from tkinter import messagebox
 import numpy as np
@@ -45,6 +46,44 @@ def open_file():
     if file:
         selected_coords = parse_pose(file)
         update_motion()
+
+
+def set_coords():
+    global selected_coords
+    new_selected_coords = []
+    win = tk.Toplevel()
+    win.wm_title("Choose Coordinates")
+    win.geometry("400x400")
+    win.grab_set()
+    win.focus_set()
+
+    popup_listbox = tk.Listbox(win, height=10, width=50, bg="light grey", activestyle='dotbox', font=("Helvetica", 8))
+    popup_listbox.grid(row=1, columnspan=2)
+
+    # select_button = ttk.Button(win, text="Add Position", command= lambda: (new_selected_coords.append(mc.get_coords()),    
+    #                                                                        listbox.delete(0, tk.END),
+    #                                                                        listbox.insert((i,str(c)) for i,c in enumerate(new_selected_coords))))
+    
+    select_button = ttk.Button(win, text="Add Position", command= lambda: (new_selected_coords.append(mc.get_coords()),
+                                                                           update_listbox(window=True,
+                                                                             window_listbox=popup_listbox, 
+                                                                             coords = new_selected_coords)))
+                                                                           
+    select_button.grid(row=0, column=0)
+
+    save_selection = ttk.Button(win, text= "Save Positions", command = lambda: (selected_coords.clear(), 
+                                                                        listbox.delete(0, tk.END),
+                                                                        print(new_selected_coords),
+                                                                        update_listbox(window=True, 
+                                                                                       window_listbox=popup_listbox,
+                                                
+                                                                                        coords=new_selected_coords, 
+                                                                                        save=True),
+                                                                        win.destroy()))
+    save_selection.grid(row=0, column=1)
+
+    
+    return
 
 def update_motion():
     ax.clear()
@@ -170,6 +209,12 @@ def find_distance(point1,point2):
 
 
 def run_motion():
+    global passed
+    if not passed:
+        messagebox.showerror(title="Robot Workspace Check", message="Manipulator unable to reach configuration.")
+        return
+
+        
     mc.send_coords(path_coords[0][0],speed=move_speed,mode=1)
     while mc.is_moving()==1:
         pass
@@ -186,11 +231,23 @@ def run_motion():
             return
     return
 
-def update_listbox():
-    listbox.delete(0, tk.END)
-    if selected_coords:
-        for i, coord in enumerate(selected_coords):
-            listbox.insert(i, str(coord))
+def update_listbox(window = False, window_listbox = None, coords = None, save =False):
+    global listbox
+    global selected_coords
+    if not window:
+        listbox.delete(0, tk.END)
+        if selected_coords:
+            for i, coord in enumerate(selected_coords):
+                listbox.insert(i, str(coord))
+    elif window:
+        selected_coords = coords.copy()
+        window_listbox.delete(0, tk.END)
+        if selected_coords:
+            for i, coord in enumerate(selected_coords):
+                window_listbox.insert(i, str(coord))
+                if save:
+                    listbox.insert(i,str(coord))
+
 
 def release_servo():
     mc.release_all_servos()
@@ -308,7 +365,8 @@ right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
 #Control buttons
 button_frame = tk.Frame(left_frame)
-tk.Button(button_frame, text="Browse", command=open_file).pack(side=tk.LEFT, padx=10)
+tk.Button(button_frame, text="Browse Files", command=open_file).pack(side=tk.LEFT, padx=10)
+tk.Button(button_frame, text= "Collect Control Poses", command = set_coords).pack(side=tk.LEFT, padx=10)
 tk.Button(button_frame, text="Run Motion", command=run_motion).pack(side=tk.LEFT, padx=10)
 tk.Button(button_frame, text="Release Servos", command=release_servo).pack(side=tk.LEFT, padx=10)
 tk.Button(button_frame, text="Reset",command=reset).pack(side=tk.LEFT, padx=10)
