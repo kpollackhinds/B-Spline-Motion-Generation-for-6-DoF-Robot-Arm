@@ -176,6 +176,7 @@ def createPath():
             temp_pose=[c*1000 for c in get_translation(i)]
             temp_pose.extend(temp_angles)
             draw_axis(temp_pose,ax,np,False,full=False,)
+            draw_axis(temp_pose,ax,np)
         knot_vector = interpolation_knot_vector(len(dual_quaternions)-1,control_points,Spline_degree,parameter)
         print(knot_vector)
         b_spline_dqs = b_spline_curve(knot_vector=knot_vector, 
