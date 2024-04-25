@@ -82,6 +82,7 @@ def set_coords():
                                                                         win.destroy()))
     save_selection.grid(row=0, column=1)
 
+    update_motion()
     
     return
 
