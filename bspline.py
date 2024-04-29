@@ -134,12 +134,17 @@ def parameterize(dq_list,style="Uniform"):
 def get_control_points(dq_list,parameter,degree,h=None):
     if h==None:
         h=len(dq_list)-1
+    if h==len(dq_list)-1 and degree==1:
+        return dq_list
     points=[dq_list[0]]
     knot_vector=interpolation_knot_vector(len(dq_list)-1,h,degree,parameter)
+    print(knot_vector)
     Q=[]
     for i in range(len(dq_list)):
+        print(better_basis_function(0,degree,parameter[i],knot_vector))
+        print(better_basis_function(h,degree,parameter[i],knot_vector))
         Q.append(dq_list[i]+(-1)*better_basis_function(0,degree,parameter[i],knot_vector)*dq_list[0]+(-1)*better_basis_function(h,degree,parameter[i],knot_vector)*dq_list[-1])
-    Q1=np.zeros([h-1,8])
+    Q1=np.zeros([len(dq_list)-2,8])
     for i in range(1,h):
         Q1[i-1,:]=Q[i].dq_array()
     #Q_arr=np.zeros([h-1,8])
@@ -152,6 +157,7 @@ def get_control_points(dq_list,parameter,degree,h=None):
     for i in range(1,len(dq_list)-1):
         for j in range(1,h):
             N_arr[i-1,j-1]=better_basis_function(j,degree,parameter[i],knot_vector)
+    print(N_arr)
     Q_arr=np.matmul(N_arr.transpose(),Q1)
     P=np.matmul(np.linalg.inv(np.matmul(N_arr.transpose(),N_arr)),Q_arr)
     #print("P",P)
@@ -174,9 +180,15 @@ def interpolation_knot_vector(n,h,degree,parameter):
             elif i > knot_vector_length - 1 - degree - 1:
                 vector[i] = 1
             else:
-                index=int((i-degree)*d)
-                alpha=(i-degree)*d-index
-                vector[i] = (1-alpha)*parameter[index]+alpha*parameter[index+1]
+                if h==n:
+                    value=0
+                    for j in range(i,i+degree):
+                        value+=parameter[j-degree]
+                    vector[i]=(1/degree)*value
+                else:
+                    index=int((i-degree)*d)
+                    alpha=(i-degree)*d-index
+                    vector[i] = (1-alpha)*parameter[index]+alpha*parameter[index+1]
     return vector
 
 
@@ -187,7 +199,7 @@ def better_basis_function(index,degree,t,knot_vector):
             prevArray.append(1)
         else:
             prevArray.append(0)
-    for j in range(1,degree):
+    for j in range(1,degree+1):
         current_array=[]
         for i in range(len(prevArray)-1):
             if knot_vector[i+j]==knot_vector[i]and knot_vector[i+j+1]==knot_vector[i+1]:

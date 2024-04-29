@@ -129,7 +129,7 @@ def createPath():
             temp_pose=[c*1000 for c in get_translation(temp_dq)]
             temp_angles=to_euler_angles(temp_quat_pose[0:4])
             #temp_pose=temp_quat_pose[4:7]
-            # temp_angles = [deg(c) for c in temp_angles]
+            #temp_angles = [deg(c) for c in temp_angles]
             # temp_angles=[deg(temp_angles[0]-180),-1*(deg(temp_angles[1])),deg(temp_angles[2]+180)]
             temp_pose.extend(temp_angles)
             path_coords.append(temp_pose)
@@ -143,12 +143,12 @@ def createPath():
         b_spline_dqs = b_spline_curve(knot_vector=knot_vector, 
                                       degree=Spline_degree, 
                                       control_positions=adjusted_control_pos_dq,
-                                    resolution=40)
+                                    resolution=20)
         for i,dq in enumerate(b_spline_dqs):
             temp_quat_pose=dq.quat_pose_array()
             print(quaternionic.array(temp_quat_pose[0:4]))
             temp_matrix=dq.homogeneous_matrix()
-            joint_array.append(arm.ets().ik_GN(temp_matrix,slimit=300))
+            joint_array.append(arm.ets().ik_GN(temp_matrix,ilimit=50,slimit=300))
             if joint_array[-1][1]==0:
                 print("here",joint_array[-1])
                 passed=False
@@ -156,7 +156,7 @@ def createPath():
 
             temp_angles=to_euler_angles(temp_quat_pose[0:4])
             temp_pose=[c*1000 for c in get_translation(dq)]
-            # temp_angles = [deg(c) for c in temp_angles]
+            #temp_angles = [deg(c) for c in temp_angles]
             temp_pose.extend(temp_angles)
             if i==0:
                 path_coords.append((temp_pose,0))
@@ -164,7 +164,7 @@ def createPath():
                 distance =find_distance(temp_pose,path_coords[-1][0])
                 time_to_run=distance/move_speed
                 path_coords.append((temp_pose,time_to_run))
-            draw_axis(temp_pose,ax,np,full=False)
+            draw_axis(temp_pose,ax,np,joint_array[-1][1],full=False)
         print(path_coords)
         print(passed)
     
@@ -177,17 +177,18 @@ def createPath():
             temp_pose=[c*1000 for c in get_translation(i)]
             temp_pose.extend(temp_angles)
             draw_axis(temp_pose,ax,np,False,full=False,)
+            draw_axis(temp_pose,ax,np)
         knot_vector = interpolation_knot_vector(len(dual_quaternions)-1,control_points,Spline_degree,parameter)
         print(knot_vector)
         b_spline_dqs = b_spline_curve(knot_vector=knot_vector, 
                                       degree=Spline_degree, 
                                       control_positions=control_points_arr,
-                                    resolution=40)
+                                    resolution=20)
         for i,dq in enumerate(b_spline_dqs):
             temp_quat_pose=dq.quat_pose_array()
             print(quaternionic.array(temp_quat_pose[0:4]))
             temp_matrix=dq.homogeneous_matrix()
-            joint_array.append(arm.ets().ik_GN(temp_matrix,slimit=300))
+            joint_array.append(arm.ets().ik_GN(temp_matrix,ilimit=50;slimit=300))
             if joint_array[-1][1]==0:
                 print("here",joint_array[-1])
                 if passed:
@@ -266,7 +267,7 @@ def checkDegree(value):
     
 def check_control_pts(value):
     global control_points
-    if value.isnumeric() and int(value)>1 and int(value)<=len(selected_coords):
+    if value.isnumeric() and int(value)>Spline_degree and int(value)<=len(selected_coords):
         control_points=int(value)-1
         update_motion()
         return True
