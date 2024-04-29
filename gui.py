@@ -79,10 +79,10 @@ def set_coords():
                                                 
                                                                                         coords=new_selected_coords, 
                                                                                         save=True),
+                                                                        update_motion(),
                                                                         win.destroy()))
     save_selection.grid(row=0, column=1)
 
-    update_motion()
     
     return
 
@@ -129,7 +129,7 @@ def createPath():
             temp_pose=[c*1000 for c in get_translation(temp_dq)]
             temp_angles=to_euler_angles(temp_quat_pose[0:4])
             #temp_pose=temp_quat_pose[4:7]
-            temp_angles = [deg(c) for c in temp_angles]
+            # temp_angles = [deg(c) for c in temp_angles]
             # temp_angles=[deg(temp_angles[0]-180),-1*(deg(temp_angles[1])),deg(temp_angles[2]+180)]
             temp_pose.extend(temp_angles)
             path_coords.append(temp_pose)
@@ -156,7 +156,7 @@ def createPath():
 
             temp_angles=to_euler_angles(temp_quat_pose[0:4])
             temp_pose=[c*1000 for c in get_translation(dq)]
-            temp_angles = [deg(c) for c in temp_angles]
+            # temp_angles = [deg(c) for c in temp_angles]
             temp_pose.extend(temp_angles)
             if i==0:
                 path_coords.append((temp_pose,0))
