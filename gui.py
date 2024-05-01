@@ -19,6 +19,7 @@ from pymycobot.mycobot import MyCobot
 from pymycobot import PI_PORT, PI_BAUD
 import roboticstoolbox as rtb
 import os
+import csv
 
 dual_quaternions=[]
 path_coords=[]
@@ -46,6 +47,16 @@ def open_file():
     if file:
         selected_coords = parse_pose(file)
         update_motion()
+
+def save_to_file():
+    file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text files", "*.txt"), ("All files", "*.*")])
+
+    if file_path:  
+        with open(file_path, mode='w', newline='') as file:
+            writer = csv.writer(file, delimiter=',')
+            for row in selected_coords:
+                writer.writerow(row)
+    pass
 
 
 def set_coords():
@@ -290,18 +301,21 @@ root = tk.Tk()
 root.wm_title("Motion Selection/Visualization Interface")
 #mc = MyCobot(PI_PORT, PI_BAUD)
 
-#Frames for layout
 left_frame = tk.Frame(root)
 right_frame = tk.Frame(root)
 
-#Label above the Listbox in the left frame
+listbox_frame = tk.Frame(left_frame)
+
 label = tk.Label(left_frame, text="Control Positions")
 label.pack(padx=10, pady=5)
 
-#Listbox in the left frame
-listbox = tk.Listbox(left_frame, height=10, width=50, bg="light grey", activestyle='dotbox', font=("Helvetica", 8))
-listbox.pack(padx=10, pady=10)
+listbox = tk.Listbox(listbox_frame, height=10, width=50, bg="light grey", activestyle='dotbox', font=("Helvetica", 8))
+listbox.pack(side=tk.LEFT, padx=10, pady=10)
 
+# Save Button in the listbox frame
+saveButton = tk.Button(listbox_frame, text="Save Control Positions", command=save_to_file)
+saveButton.pack(side=tk.LEFT, padx=10, pady=10) 
+listbox_frame.pack(pady=5)
 
 input_frame = tk.Frame(left_frame)
 curve = [ 
@@ -360,6 +374,7 @@ control_pts_textbox.grid(row=5,column=1)
 
 left_frame.pack(side=tk.LEFT, fill=tk.Y)
 input_frame.pack()
+saveButton.pack()
 
 #Plot in the right frame
 fig = Figure(figsize=(5, 4), dpi=100)
