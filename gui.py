@@ -79,9 +79,10 @@ def set_coords():
                                                 
                                                                                         coords=new_selected_coords, 
                                                                                         save=True),
-                                                                        win.destroy(),
-                                                                        update_motion()))
+                                                                        update_motion(),
+                                                                        win.destroy()))
     save_selection.grid(row=0, column=1)
+
     
     return
 
