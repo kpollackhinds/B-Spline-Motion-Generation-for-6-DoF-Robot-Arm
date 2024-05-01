@@ -79,10 +79,9 @@ def set_coords():
                                                 
                                                                                         coords=new_selected_coords, 
                                                                                         save=True),
-                                                                        win.destroy()))
+                                                                        win.destroy(),
+                                                                        update_motion()))
     save_selection.grid(row=0, column=1)
-
-    update_motion()
     
     return
 
@@ -151,9 +150,9 @@ def createPath():
             joint_array.append(arm.ets().ik_GN(temp_matrix,ilimit=50,slimit=300))
             if joint_array[-1][1]==0:
                 print("here",joint_array[-1])
+                if passed:
+                    messagebox.showerror(title="Robot Workspace Check", message="Manipulator unable to reach configuration")
                 passed=False
-                messagebox.showerror(title="Robot Workspace Check", message="Manipulator unable to reach configuration")
-
             temp_angles=to_euler_angles(temp_quat_pose[0:4])
             temp_pose=[c*1000 for c in get_translation(dq)]
             #temp_angles = [deg(c) for c in temp_angles]
@@ -164,20 +163,22 @@ def createPath():
                 distance =find_distance(temp_pose,path_coords[-1][0])
                 time_to_run=distance/move_speed
                 path_coords.append((temp_pose,time_to_run))
+            if i%5==0:
+                draw_axis(temp_pose,ax,np)
             draw_axis(temp_pose,ax,np,joint_array[-1][1],full=False)
         print(path_coords)
         print(passed)
     
     elif selected_curve.get() == 'B-spline Interpolation':
-        parameter=parameterize(dual_quaternions,selected_parameter.get())
+        parameter=parameterize(dual_quaternions,selected_parameter.get(),selected_distance.get())
         control_points_arr=get_control_points(dual_quaternions,parameter,Spline_degree,control_points)
         for i in control_points_arr:
             temp_quat_pose=i.quat_pose_array()
             temp_angles=to_euler_angles(temp_quat_pose[0:4])
             temp_pose=[c*1000 for c in get_translation(i)]
             temp_pose.extend(temp_angles)
-            draw_axis(temp_pose,ax,np,False,full=False,)
-            draw_axis(temp_pose,ax,np)
+            #draw_axis(temp_pose,ax,np,False,full=False,)
+            #draw_axis(temp_pose,ax,np)
         knot_vector = interpolation_knot_vector(len(dual_quaternions)-1,control_points,Spline_degree,parameter)
         print(knot_vector)
         b_spline_dqs = b_spline_curve(knot_vector=knot_vector, 
@@ -188,7 +189,7 @@ def createPath():
             temp_quat_pose=dq.quat_pose_array()
             print(quaternionic.array(temp_quat_pose[0:4]))
             temp_matrix=dq.homogeneous_matrix()
-            joint_array.append(arm.ets().ik_GN(temp_matrix,ilimit=50;slimit=300))
+            joint_array.append(arm.ets().ik_GN(temp_matrix,ilimit=50,slimit=300))
             if joint_array[-1][1]==0:
                 print("here",joint_array[-1])
                 if passed:
@@ -196,7 +197,7 @@ def createPath():
                 passed=False
             temp_angles=to_euler_angles(temp_quat_pose[0:4])
             temp_pose=[c*1000 for c in get_translation(dq)]
-            temp_angles = [deg(c) for c in temp_angles]
+            #temp_angles = [deg(c) for c in temp_angles]
             temp_pose.extend(temp_angles)
             if i==0:
                 path_coords.append((temp_pose,0))
@@ -204,6 +205,8 @@ def createPath():
                 distance =find_distance(temp_pose,path_coords[-1][0])
                 time_to_run=distance/move_speed
                 path_coords.append((temp_pose,time_to_run))
+            if i%5==0:
+                draw_axis(temp_pose,ax,np)
             draw_axis(temp_pose,ax,np,joint_array[-1][1],full=False)
 
 def find_distance(point1,point2):
@@ -224,8 +227,9 @@ def run_motion():
         starttime=time.time()
     #for c in joint_array:
         #mc.send_radians(radians=c[1:7], speed=20)
-        while(time.time()-starttime<c[1]):
-            mc.send_coords(c[0],speed=move_speed,mode=1)
+        #while(time.time()-starttime<c[1]):
+        time.sleep(0.01)
+        mc.send_coords(c[0],speed=move_speed,mode=1)
         #while mc.is_moving() == 1:
         #    pass
         if mc.is_moving() == -1:
@@ -335,11 +339,20 @@ selected_parameter.trace_add("write",change_curve)
 parameter_dropdown=tk.OptionMenu(input_frame,selected_parameter,*parameters)
 parameter_dropdown.grid(row=3,column=1)
 
+distance=["Quaternion","Cartesian"]
+distance_label=tk.Label(input_frame,text="Select which way to find distance (Chord and Centripetal)")
+distance_label.grid(row=4,column=0)
+selected_distance=tk.StringVar()
+selected_distance.set("Quaternion")
+selected_distance.trace_add("write",change_curve)
+distance_dropdown=tk.OptionMenu(input_frame,selected_distance,*distance)
+distance_dropdown.grid(row=4,column=1)
+
 control_pts_label=tk.Label(input_frame,text="Enter Number of Control Points (Interpolation Only).\n Only numbers less than or equal to the number of points is allowed")
-control_pts_label.grid(row=4,column=0)
+control_pts_label.grid(row=5,column=0)
 control_pts_valid = input_frame.register(check_control_pts)
 control_pts_textbox=tk.Entry(input_frame,validate='key', validatecommand=(control_pts_valid,'%P'))
-control_pts_textbox.grid(row=4,column=1)
+control_pts_textbox.grid(row=5,column=1)
 
 
 

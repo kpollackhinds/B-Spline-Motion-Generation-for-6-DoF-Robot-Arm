@@ -1,4 +1,5 @@
 import numpy as np
+from helper_functions import get_translation
 from dual_quaternions import DualQuaternion
 def gen_knot_vector(degree, n,style="Clamped"):
     """Returns a uniform clamped knot vector"""
@@ -105,7 +106,7 @@ def b_spline_curve(knot_vector, degree, control_positions, resolution=100):
 
     return bspline_points
 
-def parameterize(dq_list,style="Uniform"):
+def parameterize(dq_list,style="Uniform",dist="Quaternion"):
     parameters=[]
     if style=="Uniform":
         for i in range(len(dq_list)):
@@ -113,20 +114,40 @@ def parameterize(dq_list,style="Uniform"):
     elif style=="Chord":    
         L=0
         for i in range(len(dq_list)-1):
-            L+=(dq_list[i+1].q_r-dq_list[i].q_r).norm
+            if dist=="Quaternion":
+                L+=(dq_list[i+1].q_r-dq_list[i].q_r).norm
+            if dist=="Cartesian":
+                d1=get_translation(dq_list[i+1])
+                d2=get_translation(dq_list[i])
+                L+=((d1[0]-d2[0])**2+(d1[1]-d2[1])**2+(d1[2]-d2[2])**2)**.5
         for i in range(len(dq_list)):
             k=0
             for j in range(1,i+1):
-                k+=(dq_list[j].q_r-dq_list[j-1].q_r).norm
+                if dist=="Quaternion":
+                    k+=(dq_list[j].q_r-dq_list[j-1].q_r).norm
+                if dist=="Cartesian":
+                    d1=get_translation(dq_list[j])
+                    d2=get_translation(dq_list[j-1])
+                    k+=((d1[0]-d2[0])**2+(d1[1]-d2[1])**2+(d1[2]-d2[2])**2)**.5
             parameters.append(k/L)
     elif style=="Centripetal":
         L=0
         for i in range(len(dq_list)-1):
-            L+=((dq_list[i+1].q_r-dq_list[i].q_r).norm)**.5
+            if dist=="Quaternion":
+                L+=((dq_list[i+1].q_r-dq_list[i].q_r).norm)**.5
+            if dist=="Cartesian":
+                d1=get_translation(dq_list[i+1])
+                d2=get_translation(dq_list[i])
+                L+=((d1[0]-d2[0])**2+(d1[1]-d2[1])**2+(d1[2]-d2[2])**2)**.25
         for i in range(len(dq_list)):
             k=0
             for j in range(1,i+1):
-                k+=((dq_list[j].q_r-dq_list[j-1].q_r).norm)**.5
+                if dist=="Quaternion":
+                    k+=((dq_list[j].q_r-dq_list[j-1].q_r).norm)**.5
+                if dist=="Cartesian":
+                    d1=get_translation(dq_list[j])
+                    d2=get_translation(dq_list[j-1])
+                    k+=((d1[0]-d2[0])**2+(d1[1]-d2[1])**2+(d1[2]-d2[2])**2)**.25
             parameters.append(k/L)
     print("p",parameters)
     return parameters
@@ -188,7 +209,7 @@ def interpolation_knot_vector(n,h,degree,parameter):
                 else:
                     index=int((i-degree)*d)
                     alpha=(i-degree)*d-index
-                    vector[i] = (1-alpha)*parameter[index]+alpha*parameter[index+1]
+                    vector[i] = (1-alpha)*parameter[index-1]+alpha*parameter[index]
     return vector
 
 
