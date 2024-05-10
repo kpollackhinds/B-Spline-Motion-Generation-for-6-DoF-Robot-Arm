@@ -297,15 +297,25 @@ def change_curve(var, index, mode):
     #print(var.get())
     update_motion()
 
+def go_to_positions():
+    for c in selected_coords:
+        # check positions with ik
+        # if ik fails on a position, raise a warning
+        pass
+    for c in selected_coords:
+        mc.send_coords(coords=c, speed=20)
+        time.sleep(2)
+    return
 root = tk.Tk()
 root.wm_title("Motion Selection/Visualization Interface")
-#mc = MyCobot(PI_PORT, PI_BAUD)
+mc = MyCobot(PI_PORT, PI_BAUD)
 
 left_frame = tk.Frame(root)
 right_frame = tk.Frame(root)
 
 listbox_frame = tk.Frame(left_frame)
-
+upper_button_frame = tk.Frame(listbox_frame)
+upper_button_frame.pack(side=tk.RIGHT, padx=10)
 label = tk.Label(left_frame, text="Control Positions")
 label.pack(padx=10, pady=5)
 
@@ -313,8 +323,11 @@ listbox = tk.Listbox(listbox_frame, height=10, width=50, bg="light grey", active
 listbox.pack(side=tk.LEFT, padx=10, pady=10)
 
 # Save Button in the listbox frame
-saveButton = tk.Button(listbox_frame, text="Save Control Positions", command=save_to_file)
-saveButton.pack(side=tk.LEFT, padx=10, pady=10) 
+saveButton = tk.Button(upper_button_frame, text="Save Control Positions", command=save_to_file)
+saveButton.pack(pady=10) 
+
+go_to_position = tk.Button(upper_button_frame, text="Go to Selected Positions", command=go_to_positions)
+go_to_position.pack(pady=10)
 listbox_frame.pack(pady=5)
 
 input_frame = tk.Frame(left_frame)
@@ -370,8 +383,6 @@ control_pts_textbox=tk.Entry(input_frame,validate='key', validatecommand=(contro
 control_pts_textbox.grid(row=5,column=1)
 
 
-
-
 left_frame.pack(side=tk.LEFT, fill=tk.Y)
 input_frame.pack()
 saveButton.pack()
@@ -399,6 +410,7 @@ button_frame = tk.Frame(left_frame)
 tk.Button(button_frame, text="Browse Files", command=open_file).pack(side=tk.LEFT, padx=10)
 tk.Button(button_frame, text= "Collect Control Poses", command = set_coords).pack(side=tk.LEFT, padx=10)
 tk.Button(button_frame, text="Run Motion", command=run_motion).pack(side=tk.LEFT, padx=10)
+# tk.Button(button_frame, text="Go to Selected Poses", command=go_to_positions).pack(side=tk.LEFT, padx=10)
 tk.Button(button_frame, text="Release Servos", command=release_servo).pack(side=tk.LEFT, padx=10)
 tk.Button(button_frame, text="Reset",command=reset).pack(side=tk.LEFT, padx=10)
 
