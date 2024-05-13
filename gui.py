@@ -65,15 +65,16 @@ def set_coords():
     win = tk.Toplevel()
     win.wm_title("Choose Coordinates")
     win.geometry("400x400")
+    win.grid_columnconfigure(0, weight=1)
+    win.grid_columnconfigure(1, weight=1)
     win.grab_set()
     win.focus_set()
-
     popup_listbox = tk.Listbox(win, height=10, width=50, bg="light grey", activestyle='dotbox', font=("Helvetica", 8))
     popup_listbox.grid(row=1, columnspan=2)
 
-    # select_button = ttk.Button(win, text="Add Position", command= lambda: (new_selected_coords.append(mc.get_coords()),    
-    #                                                                        listbox.delete(0, tk.END),
-    #                                                                        listbox.insert((i,str(c)) for i,c in enumerate(new_selected_coords))))
+    select_button = ttk.Button(win, text="Add Position", command= lambda: (new_selected_coords.append(mc.get_coords()),    
+                                                                           listbox.delete(0, tk.END),
+                                                                           listbox.insert((i,str(c)) for i,c in enumerate(new_selected_coords))))
     
     select_button = ttk.Button(win, text="Add Position", command= lambda: (new_selected_coords.append(mc.get_coords()),
                                                                            update_listbox(window=True,
@@ -81,19 +82,16 @@ def set_coords():
                                                                              coords = new_selected_coords)))
                                                                            
     select_button.grid(row=0, column=0)
-
     save_selection = ttk.Button(win, text= "Save Positions", command = lambda: (selected_coords.clear(), 
                                                                         listbox.delete(0, tk.END),
                                                                         print(new_selected_coords),
                                                                         update_listbox(window=True, 
                                                                                        window_listbox=popup_listbox,
-                                                
                                                                                         coords=new_selected_coords, 
                                                                                         save=True),
                                                                         update_motion(),
                                                                         win.destroy()))
     save_selection.grid(row=0, column=1)
-
     
     return
 
@@ -308,7 +306,7 @@ def go_to_positions():
     return
 root = tk.Tk()
 root.wm_title("Motion Selection/Visualization Interface")
-mc = MyCobot(PI_PORT, PI_BAUD)
+# mc = MyCobot(PI_PORT, PI_BAUD)
 
 left_frame = tk.Frame(root)
 right_frame = tk.Frame(root)
