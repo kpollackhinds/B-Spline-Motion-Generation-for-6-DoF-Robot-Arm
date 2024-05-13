@@ -19,6 +19,7 @@ from pymycobot.mycobot import MyCobot
 from pymycobot import PI_PORT, PI_BAUD
 import roboticstoolbox as rtb
 import os
+import csv
 
 dual_quaternions=[]
 path_coords=[]
@@ -47,6 +48,16 @@ def open_file():
         selected_coords = parse_pose(file)
         update_motion()
 
+def save_to_file():
+    file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text files", "*.txt"), ("All files", "*.*")])
+
+    if file_path:  
+        with open(file_path, mode='w', newline='') as file:
+            writer = csv.writer(file, delimiter=',')
+            for row in selected_coords:
+                writer.writerow(row)
+    pass
+
 
 def set_coords():
     global selected_coords
@@ -54,15 +65,16 @@ def set_coords():
     win = tk.Toplevel()
     win.wm_title("Choose Coordinates")
     win.geometry("400x400")
+    win.grid_columnconfigure(0, weight=1)
+    win.grid_columnconfigure(1, weight=1)
     win.grab_set()
     win.focus_set()
-
     popup_listbox = tk.Listbox(win, height=10, width=50, bg="light grey", activestyle='dotbox', font=("Helvetica", 8))
     popup_listbox.grid(row=1, columnspan=2)
 
-    # select_button = ttk.Button(win, text="Add Position", command= lambda: (new_selected_coords.append(mc.get_coords()),    
-    #                                                                        listbox.delete(0, tk.END),
-    #                                                                        listbox.insert((i,str(c)) for i,c in enumerate(new_selected_coords))))
+    select_button = ttk.Button(win, text="Add Position", command= lambda: (new_selected_coords.append(mc.get_coords()),    
+                                                                           listbox.delete(0, tk.END),
+                                                                           listbox.insert((i,str(c)) for i,c in enumerate(new_selected_coords))))
     
     select_button = ttk.Button(win, text="Add Position", command= lambda: (new_selected_coords.append(mc.get_coords()),
                                                                            update_listbox(window=True,
@@ -76,13 +88,11 @@ def set_coords():
                                                                         print(new_selected_coords),
                                                                         update_listbox(window=True, 
                                                                                        window_listbox=popup_listbox,
-                                                
                                                                                         coords=new_selected_coords, 
                                                                                         save=True),
                                                                         update_motion(),
                                                                         win.destroy()))
     save_selection.grid(row=0, column=1)
-
     
     return
 
@@ -288,22 +298,38 @@ def change_curve(var, index, mode):
     #print(var.get())
     update_motion()
 
+def go_to_positions():
+    for c in selected_coords:
+        # check positions with ik
+        # if ik fails on a position, raise a warning
+        pass
+    for c in selected_coords:
+        mc.send_coords(coords=c, speed=20)
+        time.sleep(2)
+    return
 root = tk.Tk()
 root.wm_title("Motion Selection/Visualization Interface")
-#mc = MyCobot(PI_PORT, PI_BAUD)
+# mc = MyCobot(PI_PORT, PI_BAUD)
 
-#Frames for layout
 left_frame = tk.Frame(root)
 right_frame = tk.Frame(root)
 
-#Label above the Listbox in the left frame
+listbox_frame = tk.Frame(left_frame)
+upper_button_frame = tk.Frame(listbox_frame)
+upper_button_frame.pack(side=tk.RIGHT, padx=10)
 label = tk.Label(left_frame, text="Control Positions")
 label.pack(padx=10, pady=5)
 
-#Listbox in the left frame
-listbox = tk.Listbox(left_frame, height=10, width=50, bg="light grey", activestyle='dotbox', font=("Helvetica", 8))
-listbox.pack(padx=10, pady=10)
+listbox = tk.Listbox(listbox_frame, height=10, width=50, bg="light grey", activestyle='dotbox', font=("Helvetica", 8))
+listbox.pack(side=tk.LEFT, padx=10, pady=10)
 
+# Save Button in the listbox frame
+saveButton = tk.Button(upper_button_frame, text="Save Control Positions", command=save_to_file)
+saveButton.pack(pady=10) 
+
+go_to_position = tk.Button(upper_button_frame, text="Go to Selected Positions", command=go_to_positions)
+go_to_position.pack(pady=10)
+listbox_frame.pack(pady=5)
 
 input_frame = tk.Frame(left_frame)
 curve = [ 
@@ -358,10 +384,9 @@ control_pts_textbox=tk.Entry(input_frame,validate='key', validatecommand=(contro
 control_pts_textbox.grid(row=5,column=1)
 
 
-
-
 left_frame.pack(side=tk.LEFT, fill=tk.Y)
 input_frame.pack()
+saveButton.pack()
 
 #Plot in the right frame
 fig = Figure(figsize=(5, 4), dpi=100)
@@ -386,6 +411,7 @@ button_frame = tk.Frame(left_frame)
 tk.Button(button_frame, text="Browse Files", command=open_file).pack(side=tk.LEFT, padx=10)
 tk.Button(button_frame, text= "Collect Control Poses", command = set_coords).pack(side=tk.LEFT, padx=10)
 tk.Button(button_frame, text="Run Motion", command=run_motion).pack(side=tk.LEFT, padx=10)
+# tk.Button(button_frame, text="Go to Selected Poses", command=go_to_positions).pack(side=tk.LEFT, padx=10)
 tk.Button(button_frame, text="Release Servos", command=release_servo).pack(side=tk.LEFT, padx=10)
 tk.Button(button_frame, text="Reset",command=reset).pack(side=tk.LEFT, padx=10)
 
