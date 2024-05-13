@@ -226,11 +226,12 @@ def find_distance(point1,point2):
 
 def run_motion():
     global passed
+    if len(path_coords)<1:
+        return
     if not passed:
         messagebox.showerror(title="Robot Workspace Check", message="Manipulator unable to reach configuration.")
         return
 
-        
     mc.send_coords(path_coords[0][0],speed=move_speed,mode=1)
     while mc.is_moving()==1:
         pass
