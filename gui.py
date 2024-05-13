@@ -71,7 +71,7 @@ def set_coords():
                                                                            
     select_button.grid(row=0, column=0)
 
-    save_selection = ttk.Button(win, text= "Save Positions", command = lambda: (selected_coords.clear(), 
+    save_selection = ttk.Button(win, text= "Save Positions", command = lambda: (reset(), 
                                                                         listbox.delete(0, tk.END),
                                                                         print(new_selected_coords),
                                                                         update_listbox(window=True, 
@@ -262,6 +262,8 @@ def release_servo():
 def checkDegree(value):
     global Spline_degree
     if value.isnumeric() and int(value)>0 and int(value)<len(selected_coords):
+        if selected_curve.get()=="B-spline Interpolation"  and control_points != None and int(value)>control_points:
+            return False
         Spline_degree=int(value)
         update_motion()
         return True
