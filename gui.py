@@ -82,7 +82,8 @@ def set_coords():
                                                                              coords = new_selected_coords)))
                                                                            
     select_button.grid(row=0, column=0)
-    save_selection = ttk.Button(win, text= "Save Positions", command = lambda: (selected_coords.clear(), 
+
+    save_selection = ttk.Button(win, text= "Save Positions", command = lambda: (reset(), 
                                                                         listbox.delete(0, tk.END),
                                                                         print(new_selected_coords),
                                                                         update_listbox(window=True, 
@@ -225,11 +226,12 @@ def find_distance(point1,point2):
 
 def run_motion():
     global passed
+    if len(path_coords)<1:
+        return
     if not passed:
         messagebox.showerror(title="Robot Workspace Check", message="Manipulator unable to reach configuration.")
         return
 
-        
     mc.send_coords(path_coords[0][0],speed=move_speed,mode=1)
     while mc.is_moving()==1:
         pass
@@ -271,6 +273,8 @@ def release_servo():
 def checkDegree(value):
     global Spline_degree
     if value.isnumeric() and int(value)>0 and int(value)<len(selected_coords):
+        if selected_curve.get()=="B-spline Interpolation"  and control_points != None and int(value)>control_points:
+            return False
         Spline_degree=int(value)
         update_motion()
         return True
